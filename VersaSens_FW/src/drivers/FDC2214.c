@@ -20,6 +20,8 @@
 #include "versa_config.h"
 #include "app_data.h"
 
+LOG_MODULE_REGISTER(FDC2214, LOG_LEVEL_INF);
+
 /****************************************************************************/
 /**                                                                        **/
 /*                      PROTOTYPES OF LOCAL FUNCTIONS                       */
@@ -51,6 +53,7 @@ uint8_t tx_buffer_fdc[MAX_SIZE_TRANSFER + 1];
 /*! Thread stack and instance */
 K_THREAD_STACK_DEFINE(FDC2214_thread_stack, 1024);
 struct k_thread FDC2214_thread;
+
 
 /****************************************************************************/
 /**                                                                        **/
@@ -282,13 +285,40 @@ int FDC2214_init(void){
     // Get the I2C instance
     nrfx_twim_t *I2cInstPtr = twim_get_instance();
     I2cInstancePtr=I2cInstPtr;
+
+    // Instantiate the sensor
+    FDC_2214 csb_sensor_0 = {.channel_mask = 0xF, 
+                            .sampling_rate = 0xFFFF, // 10 Hertz
+                            .sensor_address = FDC_DEVICE_ADDR1};
+
+    k_msleep(4000);
+    printk("Herenow\n");
+    k_msleep(3000);
+
+    uint16_t data_read = 0;
+    int res = FDC2214_read_16bit(REG_FDC_DEVICE_ID, &data_read, csb_sensor_0.sensor_address);
+    if (res != 0){
+        printk("Error reading FDC Sensor\n");
+    }
+    //printk("dataread: %x, expected: %x", data_read[0], FDC_DEVICE_ID);
+
+    if (data_read == FDC_DEVICE_ID){
+        printk("FDC2214 Initialized Successfully!\n");
+    } else {
+        printk("FDC2214 Initialization Failed\n");
+        return -1;
+    }
+
+    // Configure the sensor
+    FDC2214_configure(&csb_sensor_0);
     
     // Start the FDC2214 thread
+    k_msleep(200);
     k_thread_create(&FDC2214_thread, FDC2214_thread_stack, K_THREAD_STACK_SIZEOF(FDC2214_thread_stack),
                     FDC2214_thread_func, NULL, NULL, NULL, FDC2214_PRIO, 0, K_NO_WAIT);
     k_thread_name_set(&FDC2214_thread, "FDC2214_thread");
 
-    printk("FDC2214_init\n");
+    LOG_INF("Versa API FDC2214 thread started\n");
     return 0;
 }
 
@@ -356,75 +386,28 @@ uint32_t FDC2214_get_values(FDC_2214 *dev, uint8_t channel_id){
     return cap_value;
 }
 
-int FDC2214_main_loop(FDC_2214 *dev){
-    const int CHAN_COUNT = 4;  // or whatever your channel count is
-    uint32_t capa[CHAN_COUNT];     // Use 'long' in C++ (equivalent to 'signed long')
-
-    for (int i = 0; i < CHAN_COUNT; ++i) {
-        capa[i] = FDC2214_get_values(dev, i);
-        //capa[i] = Cap.Read(i, 0x2A);  // Read from channel i with I2C address 0x2A
-        printk("%lu",capa[i]);
-
-        if (i < CHAN_COUNT - 1){
-            printk(",");
-        } else {
-            printk("\n");  // change to Serial.println(""); for ending the line
-        }
-    }
-}
-
 void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
 {
-    // Instantiate the sensor
+    // Instantiate again the sensor
     FDC_2214 csb_sensor_0 = {.channel_mask = 0xF, 
                             .sampling_rate = 0xFFFF, // 10 Hertz
                             .sensor_address = FDC_DEVICE_ADDR1};
-    
-    FDC_2214 csb_sensor_1 = {.channel_mask = 0xF, 
-                            .sampling_rate = 0xFFFF, // 10 Hertz
-                            .sensor_address = FDC_DEVICE_ADDR2};
-
-    // Initiate sensor array that contains the pointers
-    FDC_2214* sensor_array[2] = {&csb_sensor_0, &csb_sensor_1};
-
-    k_msleep(4000);
-    printk("Herenow\n");
-    k_msleep(3000);
-
-    uint16_t data_read = 0;
-    int res = FDC2214_read_16bit(REG_FDC_DEVICE_ID, &data_read, sensor_array[0]->sensor_address);
-    if (res != 0){
-        printk("Error reading FDC Sensor\n");
-    }
-    //printk("dataread: %x, expected: %x", data_read[0], FDC_DEVICE_ID);
-
-    if (data_read == FDC_DEVICE_ID){
-        printk("FDC2214 Initialized Successfully!\n");
-    } else {
-        printk("FDC2214 Initialization Failed\n");
-        return -1;
-    }
-
-    // Configure the sensor
-    FDC2214_configure(sensor_array[0]);
 
     const int CHAN_COUNT = 4;
     uint32_t capa[CHAN_COUNT];
-    
+
     while (1){
         for (int i = 0; i < CHAN_COUNT; ++i) {
-            capa[i] = FDC2214_get_values(sensor_array[0], i);
-            //capa[i] = Cap.Read(i, 0x2A);  // Read from channel i with I2C address 0x2A
+            capa[i] = FDC2214_get_values(&csb_sensor_0, i);
             printk("%lu",capa[i]);
 
             if (i < CHAN_COUNT - 1){
                 printk(",");
             } else {
-                printk("\n");  // change to Serial.println(""); for ending the line
+                printk("\n");
             }
         }
-    
-        //printk("Hey\n");
+
         k_sleep(K_MSEC(500));
-        }
     }
+}

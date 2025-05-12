@@ -46,8 +46,5 @@ int main(void)
     {
         // data aquisition example
         k_sleep(K_MSEC(500));
-        printk("Main Loop1\n");
-        k_sleep(K_MSEC(500));
-        printk("Main Loop2\n");
     }
 }

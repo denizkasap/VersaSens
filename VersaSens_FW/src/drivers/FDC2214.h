@@ -144,10 +144,7 @@ int FDC2214_init(void);
 
 int FDC2214_configure(FDC_2214 *dev);
 
-int FDC2214_check_configuration(FDC_2214 *dev);
-
 uint32_t FDC2214_get_values(FDC_2214 *dev, uint8_t channel_id);
 
-int FDC2214_main_loop(FDC_2214 *dev);
 
 #endif /* _FDC2214_H */
