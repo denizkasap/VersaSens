@@ -20,7 +20,18 @@
 #include "versa_config.h"
 #include "app_data.h"
 
+/****************************************************************************/
+/**                                                                        **/
+/*                        DEFINITIONS AND MACROS                            */
+/**                                                                        **/
+/****************************************************************************/
+
 LOG_MODULE_REGISTER(FDC2214, LOG_LEVEL_INF);
+
+// FDC2214 storage format header
+#define FDC2214_STORAGE_HEADER 0x3333
+
+//#define FDC2214_PRINT_VAL
 
 /****************************************************************************/
 /**                                                                        **/
@@ -53,6 +64,9 @@ uint8_t tx_buffer_fdc[MAX_SIZE_TRANSFER + 1];
 /*! Thread stack and instance */
 K_THREAD_STACK_DEFINE(FDC2214_thread_stack, 1024);
 struct k_thread FDC2214_thread;
+
+/*! Structure to store capacitance data */
+FDC2214_StorageFormat FDC2214_Storage;
 
 
 /****************************************************************************/
@@ -322,6 +336,9 @@ int FDC2214_init(void){
     return 0;
 }
 
+/*****************************************************************************
+*****************************************************************************/
+
 uint32_t FDC2214_get_values(FDC_2214 *dev, uint8_t channel_id){
     /*
     First 4 LSB bits of "STATUS" register at 0x18:
@@ -386,28 +403,52 @@ uint32_t FDC2214_get_values(FDC_2214 *dev, uint8_t channel_id){
     return cap_value;
 }
 
+/*****************************************************************************
+*****************************************************************************/
+
 void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
 {
     // Instantiate again the sensor
+    // This is a workaround temporarily for the fact that I cannot pass pointer of pointer as an argument to the thread
     FDC_2214 csb_sensor_0 = {.channel_mask = 0xF, 
                             .sampling_rate = 0xFFFF, // 10 Hertz
                             .sensor_address = FDC_DEVICE_ADDR1};
 
     const int CHAN_COUNT = 4;
-    uint32_t capa[CHAN_COUNT];
+    uint32_t FDC_values[CHAN_COUNT];
+
+    FDC2214_Storage.header = FDC2214_STORAGE_HEADER;       /*!< Storage header marker */
+    uint8_t frame_index = 0;                            /*!< Frame sequence index */
 
     while (1){
         for (int i = 0; i < CHAN_COUNT; ++i) {
-            capa[i] = FDC2214_get_values(&csb_sensor_0, i);
-            printk("%lu",capa[i]);
+            FDC_values[i] = FDC2214_get_values(&csb_sensor_0, i);
 
+            #ifdef FDC2214_PRINT_VAL
+            printk("%lu",capa[i]);
             if (i < CHAN_COUNT - 1){
                 printk(",");
             } else {
                 printk("\n");
             }
+            #endif
         }
 
-        k_sleep(K_MSEC(500));
+        struct time_values current_time = get_time_values();
+        FDC2214_Storage.rawtime_bin = current_time.rawtime_s_bin;
+        FDC2214_Storage.time_ms_bin = current_time.time_ms_bin;
+
+        /* Store encoded data in storage format structure */
+        FDC2214_Storage.len = 4;
+        FDC2214_Storage.index = frame_index++;
+        FDC2214_Storage.CH0_val = FDC_values[0];
+        FDC2214_Storage.CH1_val = FDC_values[1];
+        FDC2214_Storage.CH2_val = FDC_values[2];
+        FDC2214_Storage.CH3_val = FDC_values[3];
+
+        ble_add_to_fifo((uint8_t *)&FDC2214_Storage, sizeof(FDC2214_Storage));
+        printk("data sent\n");
+        k_sleep(K_MSEC(200));
+
     }
 }

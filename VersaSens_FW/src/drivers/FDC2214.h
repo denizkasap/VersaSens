@@ -64,6 +64,19 @@
 /**                                                                        **/
 /****************************************************************************/
 
+/*! Format of the data to be stored in the flash */
+typedef struct {
+    int16_t header;
+    int32_t rawtime_bin;
+    int16_t time_ms_bin;
+    uint8_t len;
+    uint8_t index;
+    uint32_t CH0_val;
+    uint32_t CH1_val;
+    uint32_t CH2_val;
+    uint32_t CH3_val;
+} __attribute__((packed)) FDC2214_StorageFormat;
+
 
 typedef struct {
     uint8_t channel_mask;
