@@ -22,6 +22,22 @@
 
 /****************************************************************************/
 /**                                                                        **/
+/*                      PROTOTYPES OF LOCAL FUNCTIONS                       */
+/**                                                                        **/
+/****************************************************************************/
+
+/**
+ * @brief Function to handle the FDC2214 thread
+ * 
+ * @param arg1 A pointer to the first argument passed to the thread.
+ * @param arg2 A pointer to the second argument passed to the thread.
+ * @param arg3 A pointer to the third argument passed to the thread.
+ */
+void FDC2214_thread_func(void *arg1, void *arg2, void *arg3);
+
+
+/****************************************************************************/
+/**                                                                        **/
 /*                            GLOBAL VARIABLES                              */
 /**                                                                        **/
 /****************************************************************************/
@@ -32,7 +48,9 @@ static nrfx_twim_t *I2cInstancePtr;
 // TX buffer
 uint8_t tx_buffer_fdc[MAX_SIZE_TRANSFER + 1];
 
-
+/*! Thread stack and instance */
+K_THREAD_STACK_DEFINE(FDC2214_thread_stack, 1024);
+struct k_thread FDC2214_thread;
 
 /****************************************************************************/
 /**                                                                        **/
@@ -260,123 +278,17 @@ int FDC2214_configure(FDC_2214 *dev)
 /*****************************************************************************
 *****************************************************************************/
 
-int FDC2214_check_configuration(FDC_2214 *dev)
-{
-    uint16_t reg_status = 0; //read_Cap(REG_FDC_STATUS, addr);
-
-    FDC2214_read_16bit(REG_FDC_SETTLECOUNT_CH0, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_SETTLECOUNT_CH0, reg_status);
-
-    FDC2214_read_16bit(REG_FDC_RCOUNT_CH0, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_RCOUNT_CH0, reg_status);
-
-    FDC2214_read_16bit(REG_FDC_OFFSET_CH0, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_OFFSET_CH0, reg_status);
-    
-    FDC2214_read_16bit(REG_FDC_CLOCK_DIVIDERS_CH0, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_CLOCK_DIVIDERS_CH0, reg_status);
-    
-    FDC2214_read_16bit(REG_FDC_DRIVE_CH0, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_DRIVE_CH0, reg_status);
-
-    
-
-    FDC2214_read_16bit(REG_FDC_SETTLECOUNT_CH1, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_SETTLECOUNT_CH1, reg_status);
-
-    FDC2214_read_16bit(REG_FDC_RCOUNT_CH1, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_RCOUNT_CH1, reg_status);
-
-    FDC2214_read_16bit(REG_FDC_OFFSET_CH1, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_OFFSET_CH1, reg_status);
-    
-    FDC2214_read_16bit(REG_FDC_CLOCK_DIVIDERS_CH1, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_CLOCK_DIVIDERS_CH1, reg_status);
-    
-    FDC2214_read_16bit(REG_FDC_DRIVE_CH1, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_DRIVE_CH1, reg_status);
-
-
-
-    FDC2214_read_16bit(REG_FDC_SETTLECOUNT_CH2, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_SETTLECOUNT_CH2, reg_status);
-
-    FDC2214_read_16bit(REG_FDC_RCOUNT_CH2, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_RCOUNT_CH2, reg_status);
-
-    FDC2214_read_16bit(REG_FDC_OFFSET_CH2, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_OFFSET_CH2, reg_status);
-    
-    FDC2214_read_16bit(REG_FDC_CLOCK_DIVIDERS_CH2, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_CLOCK_DIVIDERS_CH2, reg_status);
-    
-    FDC2214_read_16bit(REG_FDC_DRIVE_CH2, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_DRIVE_CH2, reg_status);
-
-
-
-    FDC2214_read_16bit(REG_FDC_SETTLECOUNT_CH3, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_SETTLECOUNT_CH3, reg_status);
-
-    FDC2214_read_16bit(REG_FDC_RCOUNT_CH3, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_RCOUNT_CH3, reg_status);
-
-    FDC2214_read_16bit(REG_FDC_OFFSET_CH3, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_OFFSET_CH3, reg_status);
-    
-    FDC2214_read_16bit(REG_FDC_CLOCK_DIVIDERS_CH3, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_CLOCK_DIVIDERS_CH3, reg_status);
-    
-    FDC2214_read_16bit(REG_FDC_DRIVE_CH3, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_DRIVE_CH3, reg_status);
-
-    
-    FDC2214_read_16bit(REG_FDC_CONFIG, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_CONFIG, reg_status);
-
-    FDC2214_read_16bit(REG_FDC_MUX_CONFIG, &reg_status, dev->sensor_address);
-    printk("Register %X read: %X\n", REG_FDC_MUX_CONFIG, reg_status);
-}
-
-/*****************************************************************************
-*****************************************************************************/
-
 int FDC2214_init(void){
     // Get the I2C instance
     nrfx_twim_t *I2cInstPtr = twim_get_instance();
     I2cInstancePtr=I2cInstPtr;
-
-    // Instantiate the sensor
-    FDC_2214 csb_sensor_0;
-    csb_sensor_0.sensor_address = FDC_DEVICE_ADDR;
-    csb_sensor_0.channel_mask = 0xF;
-    csb_sensor_0.sampling_rate = 0xFFFF;//10; // Hertz
-
-    k_msleep(4000);
-    printk("Herenow\n");
-    k_msleep(3000);
-
-    uint16_t data_read = 0;
-    int res = FDC2214_read_16bit(REG_FDC_DEVICE_ID, &data_read, csb_sensor_0.sensor_address);
-    if (res != 0){
-        printk("Error reading FDC Sensor\n");
-    }
-    //printk("dataread: %x, expected: %x", data_read[0], FDC_DEVICE_ID);
-
-    if (data_read == FDC_DEVICE_ID){
-        printk("FDC2214 Initialized Successfully!\n");
-    } else {
-        printk("FDC2214 Initialization Failed\n");
-        //return -1;
-    }
-
-    // Configure the sensor
-    FDC2214_configure(&csb_sensor_0);
-
-    FDC2214_check_configuration(&csb_sensor_0);
-
-    FDC2214_main_loop(&csb_sensor_0);
     
+    // Start the FDC2214 thread
+    k_thread_create(&FDC2214_thread, FDC2214_thread_stack, K_THREAD_STACK_SIZEOF(FDC2214_thread_stack),
+                    FDC2214_thread_func, NULL, NULL, NULL, FDC2214_PRIO, 0, K_NO_WAIT);
+    k_thread_name_set(&FDC2214_thread, "FDC2214_thread");
+
+    printk("FDC2214_init\n");
     return 0;
 }
 
@@ -460,3 +372,59 @@ int FDC2214_main_loop(FDC_2214 *dev){
         }
     }
 }
+
+void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
+{
+    // Instantiate the sensor
+    FDC_2214 csb_sensor_0 = {.channel_mask = 0xF, 
+                            .sampling_rate = 0xFFFF, // 10 Hertz
+                            .sensor_address = FDC_DEVICE_ADDR1};
+    
+    FDC_2214 csb_sensor_1 = {.channel_mask = 0xF, 
+                            .sampling_rate = 0xFFFF, // 10 Hertz
+                            .sensor_address = FDC_DEVICE_ADDR2};
+
+    // Initiate sensor array that contains the pointers
+    FDC_2214* sensor_array[2] = {&csb_sensor_0, &csb_sensor_1};
+
+    k_msleep(4000);
+    printk("Herenow\n");
+    k_msleep(3000);
+
+    uint16_t data_read = 0;
+    int res = FDC2214_read_16bit(REG_FDC_DEVICE_ID, &data_read, sensor_array[0]->sensor_address);
+    if (res != 0){
+        printk("Error reading FDC Sensor\n");
+    }
+    //printk("dataread: %x, expected: %x", data_read[0], FDC_DEVICE_ID);
+
+    if (data_read == FDC_DEVICE_ID){
+        printk("FDC2214 Initialized Successfully!\n");
+    } else {
+        printk("FDC2214 Initialization Failed\n");
+        return -1;
+    }
+
+    // Configure the sensor
+    FDC2214_configure(sensor_array[0]);
+
+    const int CHAN_COUNT = 4;
+    uint32_t capa[CHAN_COUNT];
+    
+    while (1){
+        for (int i = 0; i < CHAN_COUNT; ++i) {
+            capa[i] = FDC2214_get_values(sensor_array[0], i);
+            //capa[i] = Cap.Read(i, 0x2A);  // Read from channel i with I2C address 0x2A
+            printk("%lu",capa[i]);
+
+            if (i < CHAN_COUNT - 1){
+                printk(",");
+            } else {
+                printk("\n");  // change to Serial.println(""); for ending the line
+            }
+        }
+    
+        //printk("Hey\n");
+        k_sleep(K_MSEC(500));
+        }
+    }

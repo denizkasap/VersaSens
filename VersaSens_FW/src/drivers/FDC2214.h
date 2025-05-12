@@ -11,7 +11,8 @@
 /****************************************************************************/
 
 /*!Device Address*/
-#define FDC_DEVICE_ADDR                 0x2A
+#define FDC_DEVICE_ADDR1                0x2A
+#define FDC_DEVICE_ADDR2                0x2B
 
 /*!I2C Configuration*/  
 #define MAX_SIZE_TRANSFER               20  

@@ -69,6 +69,9 @@ Description : Original version.
 /*Priority of the MAX77658 thread */
 #define MAX77658_PRIO       K_PRIO_PREEMPT(6)
 
+/*Priority of the FDC2214 thread */
+#define FDC2214_PRIO        K_PRIO_PREEMPT(6)
+
 /*Priority of the MAX86178 thread */
 #define MAX86178_PRIO       K_PRIO_PREEMPT(5)
 
