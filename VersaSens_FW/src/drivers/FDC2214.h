@@ -121,7 +121,7 @@ int FDC2214_write_8bit(uint8_t addr, uint8_t data, uint8_t sensor_addr);
  * 
  * @return 0 if the I2C transfer was successful, -1 otherwise.
  */
-int FDC2214_write_16bit(uint8_t start_address, uint16_t *data, size_t num_words, uint8_t sensor_addr);
+int FDC2214_write_16bit(uint8_t start_address, uint16_t data, uint8_t sensor_addr);
 
 /**
  * @brief This function reads a sequence of 16-bit words from sequential registers on the FDC2214 device.
@@ -137,13 +137,15 @@ int FDC2214_write_16bit(uint8_t start_address, uint16_t *data, size_t num_words,
  * 
  * @return 0 if the I2C transfer was successful, -1 otherwise.
  */
-int FDC2214_read_16bit(uint8_t start_address, uint16_t *data, size_t num_words, uint8_t sensor_addr);
+int FDC2214_read_16bit(uint8_t start_address, uint16_t *data, uint8_t sensor_addr);
 
 int FDC2214_init(void);
 
 int FDC2214_configure(FDC_2214 *dev);
 
-int FDC2214_get_values(FDC_2214 *dev, uint8_t channel_id);
+int FDC2214_check_configuration(FDC_2214 *dev);
+
+uint32_t FDC2214_get_values(FDC_2214 *dev, uint8_t channel_id);
 
 int FDC2214_main_loop(FDC_2214 *dev);
 
