@@ -55,6 +55,7 @@ Description : Original version.
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <nrfx_gpiote.h>
+#include "FDC2214.h"
 #include "MAX77658.h"
 #include "versa_ble.h"
 #include "twim_inst.h"
@@ -198,8 +199,10 @@ int versa_init(void)
     start_ble();
     // Initialize the I2C instance
     twim_inst_init();
+    // Initialize the FDC2214
+    FDC2214_init();
     // Initialize the MAX77658
-    MAX77658_init();
+    //MAX77658_init();
     // Initialize the storage
     storage_init();
     k_sleep(K_MSEC(500));

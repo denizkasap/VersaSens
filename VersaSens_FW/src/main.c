@@ -8,6 +8,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <nrfx_gpiote.h>
+#include "FDC2214.h"
 #include "MAX77658.h"
 #include "versa_ble.h"
 #include "twim_inst.h"
@@ -28,6 +29,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 int main(void)
 {
+    printk("Started!\n");
     nrf_gpio_cfg_output(START_PIN);
     nrf_gpio_pin_set(START_PIN);
     
@@ -43,21 +45,9 @@ int main(void)
     while (1)
     {
         // data aquisition example
-        k_sleep(K_MSEC(10));
-        struct app_data_struct *data = k_malloc(sizeof(*data));
-        if (data == NULL)
-        {
-            LOG_ERR("Failed to allocate memory for new_data\n");
-        }
-        else
-        {
-            app_data_get_from_fifo(data);
-        }
-        
-        if (data != NULL)
-        {
-            LOG_INF("Data received from FIFO: %02hx", data->data[0]);
-            k_free(data);
-        }
+        k_sleep(K_MSEC(500));
+        printk("Main Loop1\n");
+        k_sleep(K_MSEC(500));
+        printk("Main Loop2\n");
     }
 }
