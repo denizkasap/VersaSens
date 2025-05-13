@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(FDC2214, LOG_LEVEL_INF);
 // FDC2214 storage format header
 #define FDC2214_STORAGE_HEADER 0x3333
 
-//#define FDC2214_PRINT_VAL
+#define FDC2214_PRINT_VAL
 
 /****************************************************************************/
 /**                                                                        **/
@@ -446,6 +446,7 @@ void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
         FDC2214_Storage.CH2_val = FDC_values[2];
         FDC2214_Storage.CH3_val = FDC_values[3];
 
+        storage_add_to_fifo((uint8_t *)&FDC2214_Storage, sizeof(FDC2214_Storage));
         ble_add_to_fifo((uint8_t *)&FDC2214_Storage, sizeof(FDC2214_Storage));
         printk("data sent\n");
         k_sleep(K_MSEC(200));
