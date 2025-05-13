@@ -425,7 +425,7 @@ void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
             FDC_values[i] = FDC2214_get_values(&csb_sensor_0, i);
 
             #ifdef FDC2214_PRINT_VAL
-            printk("%lu",capa[i]);
+            printk("%lu",FDC_values[i]);
             if (i < CHAN_COUNT - 1){
                 printk(",");
             } else {
