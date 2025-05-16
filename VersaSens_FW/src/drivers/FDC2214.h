@@ -75,6 +75,10 @@ typedef struct {
     uint32_t CH1_val;
     uint32_t CH2_val;
     uint32_t CH3_val;
+    uint32_t CH4_val;
+    uint32_t CH5_val;
+    uint32_t CH6_val;
+    uint32_t CH7_val;
 } __attribute__((packed)) FDC2214_StorageFormat;
 
 
@@ -82,6 +86,7 @@ typedef struct {
     uint8_t channel_mask;
     uint8_t sensor_address;
     uint16_t sampling_rate;
+    uint8_t sensor_id;
 } FDC_2214;
 
 

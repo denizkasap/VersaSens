@@ -194,10 +194,10 @@ int FDC2214_configure(FDC_2214 *dev)
         status |= FDC2214_write_16bit(REG_FDC_DRIVE_CH0, data2write, dev->sensor_address);
     }
     if (status != 0){
-        printk("Error configuring CH0!\n");
+        printk("Error configuring CH%i\n", 0 + dev->sensor_id*4);
         config_successful |= -1;
     } else {
-        printk("Configured CH%i\n", 0);
+        printk("Configured CH%i\n", 0 + dev->sensor_id*4);
     }
 
     // Configure CH1
@@ -215,10 +215,10 @@ int FDC2214_configure(FDC_2214 *dev)
         status |= FDC2214_write_16bit(REG_FDC_DRIVE_CH1, data2write, dev->sensor_address);
     }
     if (status != 0){
-        printk("Error configuring CH1!\n");
+        printk("Error configuring CH%i\n", 1 + dev->sensor_id*4);
         config_successful |= -1;
     } else {
-        printk("Configured CH%i\n", 1);
+        printk("Configured CH%i\n", 1 + dev->sensor_id*4);
     }
 
     // Configure CH2
@@ -236,10 +236,10 @@ int FDC2214_configure(FDC_2214 *dev)
         status |= FDC2214_write_16bit(REG_FDC_DRIVE_CH2, data2write, dev->sensor_address);
     }
     if (status != 0){
-        printk("Error configuring CH2!\n");
+        printk("Error configuring CH%i\n", 2 + dev->sensor_id*4);
         config_successful |= -1;
     } else {
-        printk("Configured CH%i\n", 2);
+        printk("Configured CH%i\n", 2 + dev->sensor_id*4);
     }
 
     // Configure CH3
@@ -257,10 +257,10 @@ int FDC2214_configure(FDC_2214 *dev)
         status |= FDC2214_write_16bit(REG_FDC_DRIVE_CH3, data2write, dev->sensor_address);
     }
     if (status != 0){
-        printk("Error configuring CH3!\n");
+        printk("Error configuring CH%i\n", 3 + dev->sensor_id*4);
         config_successful |= -1;
     } else {
-        printk("Configured CH%i\n", 3);
+        printk("Configured CH%i\n", 3 + dev->sensor_id*4);
     }
 
     // Configure ?????
@@ -303,7 +303,13 @@ int FDC2214_init(void){
     // Instantiate the sensor
     FDC_2214 csb_sensor_0 = {.channel_mask = 0xF, 
                             .sampling_rate = 0xFFFF, // 10 Hertz
-                            .sensor_address = FDC_DEVICE_ADDR1};
+                            .sensor_address = FDC_DEVICE_ADDR1,
+                            .sensor_id = 0};
+
+    FDC_2214 csb_sensor_1 = {.channel_mask = 0xF, 
+                            .sampling_rate = 0xFFFF, // 10 Hertz
+                            .sensor_address = FDC_DEVICE_ADDR2,
+                            .sensor_id = 1};
 
     k_msleep(4000);
     printk("Herenow\n");
@@ -325,6 +331,26 @@ int FDC2214_init(void){
 
     // Configure the sensor
     FDC2214_configure(&csb_sensor_0);
+
+    // -----------------------------------------
+
+    res = FDC2214_read_16bit(REG_FDC_DEVICE_ID, &data_read, csb_sensor_1.sensor_address);
+    if (res != 0){
+        printk("Error reading FDC Sensor\n");
+    }
+    //printk("dataread: %x, expected: %x", data_read[0], FDC_DEVICE_ID);
+
+    if (data_read == FDC_DEVICE_ID){
+        printk("FDC2214 Initialized Successfully!\n");
+    } else {
+        printk("FDC2214 Initialization Failed\n");
+        return -1;
+    }
+
+    // Configure the sensor
+    FDC2214_configure(&csb_sensor_1);
+
+    // -------------------------------
     
     // Start the FDC2214 thread
     k_msleep(200);
@@ -412,26 +438,40 @@ void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
     // This is a workaround temporarily for the fact that I cannot pass pointer of pointer as an argument to the thread
     FDC_2214 csb_sensor_0 = {.channel_mask = 0xF, 
                             .sampling_rate = 0xFFFF, // 10 Hertz
-                            .sensor_address = FDC_DEVICE_ADDR1};
+                            .sensor_address = FDC_DEVICE_ADDR1,
+                            .sensor_id = 0};
 
+    FDC_2214 csb_sensor_1 = {.channel_mask = 0xF, 
+                            .sampling_rate = 0xFFFF, // 10 Hertz
+                            .sensor_address = FDC_DEVICE_ADDR2,
+                            .sensor_id = 1};
+
+    const int SENSOR_COUNT = 2;                        
     const int CHAN_COUNT = 4;
-    uint32_t FDC_values[CHAN_COUNT];
+    uint32_t FDC_values[SENSOR_COUNT * CHAN_COUNT];
 
     FDC2214_Storage.header = FDC2214_STORAGE_HEADER;       /*!< Storage header marker */
     uint8_t frame_index = 0;                            /*!< Frame sequence index */
 
     while (1){
-        for (int i = 0; i < CHAN_COUNT; ++i) {
-            FDC_values[i] = FDC2214_get_values(&csb_sensor_0, i);
+        for (int i = 0; i < SENSOR_COUNT; ++i){
+            for (int j = 0; j < CHAN_COUNT; ++j) {
 
-            #ifdef FDC2214_PRINT_VAL
-            printk("%lu",FDC_values[i]);
-            if (i < CHAN_COUNT - 1){
-                printk(",");
-            } else {
-                printk("\n");
+                if (i == 0){
+                    FDC_values[i*CHAN_COUNT + j] = FDC2214_get_values(&csb_sensor_0, j);
+                } else { // Switch to the second sensor for channels 4-7
+                    FDC_values[i*CHAN_COUNT + j] = FDC2214_get_values(&csb_sensor_1, j);
+                }
+
+                #ifdef FDC2214_PRINT_VAL
+                printk("%lu",FDC_values[i*CHAN_COUNT + j]);
+                if (i*CHAN_COUNT + j < SENSOR_COUNT * CHAN_COUNT - 1){
+                    printk(",");
+                } else {
+                    printk("\n");
+                }
+                #endif
             }
-            #endif
         }
 
         struct time_values current_time = get_time_values();
@@ -445,11 +485,15 @@ void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
         FDC2214_Storage.CH1_val = FDC_values[1];
         FDC2214_Storage.CH2_val = FDC_values[2];
         FDC2214_Storage.CH3_val = FDC_values[3];
+        FDC2214_Storage.CH4_val = FDC_values[4];
+        FDC2214_Storage.CH5_val = FDC_values[5];
+        FDC2214_Storage.CH6_val = FDC_values[6];
+        FDC2214_Storage.CH7_val = FDC_values[7];
 
         storage_add_to_fifo((uint8_t *)&FDC2214_Storage, sizeof(FDC2214_Storage));
         ble_add_to_fifo((uint8_t *)&FDC2214_Storage, sizeof(FDC2214_Storage));
         printk("data sent\n");
-        k_sleep(K_MSEC(200));
+        //k_sleep(K_MSEC(200));
 
     }
 }
