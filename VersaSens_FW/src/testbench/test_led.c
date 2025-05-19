@@ -37,7 +37,7 @@ int main(void)
     versa_start_led_thread();
     versa_start_mode_thread();
 
-    SPI_Heepocrates_init();
+    //SPI_Heepocrates_init();
 
     while (1)
     {

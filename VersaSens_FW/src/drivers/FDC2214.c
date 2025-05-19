@@ -68,6 +68,10 @@ struct k_thread FDC2214_thread;
 /*! Structure to store capacitance data */
 FDC2214_StorageFormat FDC2214_Storage;
 
+// Initialization Variables
+int sensor0_init_successful = 0;
+int sensor1_init_successful = 0;
+
 
 /****************************************************************************/
 /**                                                                        **/
@@ -296,6 +300,19 @@ int FDC2214_configure(FDC_2214 *dev)
 *****************************************************************************/
 
 int FDC2214_init(void){
+
+    // Configure GPIO Pins: Shutdown (SD) = LOW, ADDR: LOW (0x2A), HIGH (0x2B)
+
+    //set shutdown0 pin to output
+    //nrf_gpio_cfg_output(SENSOR0_SD_PIN);
+    //set shutdown0 pin to low
+    //nrf_gpio_pin_clear(SENSOR0_SD_PIN);
+
+    //set shutdown1 pin to output
+    //nrf_gpio_cfg_output(SENSOR1_SD_PIN);
+    //set shutdown1 pin to low
+    //nrf_gpio_pin_clear(SENSOR1_SD_PIN);
+
     // Get the I2C instance
     nrfx_twim_t *I2cInstPtr = twim_get_instance();
     I2cInstancePtr=I2cInstPtr;
@@ -311,9 +328,9 @@ int FDC2214_init(void){
                             .sensor_address = FDC_DEVICE_ADDR2,
                             .sensor_id = 1};
 
-    k_msleep(4000);
-    printk("Herenow\n");
-    k_msleep(3000);
+    //k_msleep(4000);
+    //printk("Herenow\n");
+    //k_msleep(3000);
 
     uint16_t data_read = 0;
     int res = FDC2214_read_16bit(REG_FDC_DEVICE_ID, &data_read, csb_sensor_0.sensor_address);
@@ -324,13 +341,16 @@ int FDC2214_init(void){
 
     if (data_read == FDC_DEVICE_ID){
         printk("FDC2214 Initialized Successfully!\n");
+        sensor0_init_successful = 1;
+        
+        // Configure the sensor
+        FDC2214_configure(&csb_sensor_0);
     } else {
         printk("FDC2214 Initialization Failed\n");
-        return -1;
+        //return -1;
     }
 
-    // Configure the sensor
-    FDC2214_configure(&csb_sensor_0);
+    
 
     // -----------------------------------------
 
@@ -342,13 +362,14 @@ int FDC2214_init(void){
 
     if (data_read == FDC_DEVICE_ID){
         printk("FDC2214 Initialized Successfully!\n");
+        sensor1_init_successful = 1;
+
+        // Configure the sensor
+        FDC2214_configure(&csb_sensor_1);
     } else {
         printk("FDC2214 Initialization Failed\n");
-        return -1;
+        //return -1;
     }
-
-    // Configure the sensor
-    FDC2214_configure(&csb_sensor_1);
 
     // -------------------------------
     
@@ -449,6 +470,7 @@ void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
     const int SENSOR_COUNT = 2;                        
     const int CHAN_COUNT = 4;
     uint32_t FDC_values[SENSOR_COUNT * CHAN_COUNT];
+    memset(FDC_values, 0, SENSOR_COUNT * CHAN_COUNT);
 
     FDC2214_Storage.header = FDC2214_STORAGE_HEADER;       /*!< Storage header marker */
     uint8_t frame_index = 0;                            /*!< Frame sequence index */
@@ -458,9 +480,18 @@ void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
             for (int j = 0; j < CHAN_COUNT; ++j) {
 
                 if (i == 0){
-                    FDC_values[i*CHAN_COUNT + j] = FDC2214_get_values(&csb_sensor_0, j);
-                } else { // Switch to the second sensor for channels 4-7
-                    FDC_values[i*CHAN_COUNT + j] = FDC2214_get_values(&csb_sensor_1, j);
+                    if (sensor0_init_successful){
+                        FDC_values[i*CHAN_COUNT + j] = FDC2214_get_values(&csb_sensor_0, j);
+                    } else {
+                        FDC_values[i*CHAN_COUNT + j] = 0;
+                    }
+                }
+                if (i == 1){ // Switch to the second sensor for channels 4-7
+                    if (sensor1_init_successful){
+                        FDC_values[i*CHAN_COUNT + j] = FDC2214_get_values(&csb_sensor_1, j);
+                    } else {
+                        FDC_values[i*CHAN_COUNT + j] = 0;
+                    }
                 }
 
                 #ifdef FDC2214_PRINT_VAL

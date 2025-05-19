@@ -3,12 +3,16 @@
 
 #include <zephyr/types.h>
 #include "twim_inst.h"
+#include <nrfx_gpiote.h>
 
 /****************************************************************************/
 /**                                                                        **/
 /**                       DEFINITIONS AND MACROS                           **/
 /**                                                                        **/
 /****************************************************************************/
+
+#define SENSOR0_SD_PIN                  6   // USB_GP1 --> These are used for HEEPO module,
+#define SENSOR1_SD_PIN                  4   // USB_GP2     but they are overwritten for now...
 
 /*!Device Address*/
 #define FDC_DEVICE_ADDR1                0x2A

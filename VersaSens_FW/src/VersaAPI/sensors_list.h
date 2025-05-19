@@ -79,7 +79,7 @@ Description : Original version.
 
 // Use this define to exclude a sensor from the build
 #define ADS1298_DISABLE
-#define BNO086_DISABLE
+//#define BNO086_DISABLE
 #define MAX30001_DISABLE
 #define MAX86178_DISABLE
 #define MLX90632_DISABLE
