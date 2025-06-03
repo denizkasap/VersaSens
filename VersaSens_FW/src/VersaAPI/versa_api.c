@@ -59,6 +59,7 @@ Description : Original version.
 #include "MAX77658.h"
 #include "versa_ble.h"
 #include "twim_inst.h"
+#include "twim2_inst.h"
 #include "storage.h"
 #include "ADS1298.h"
 #include "MAX30001.h"
@@ -198,6 +199,7 @@ int versa_init(void)
     start_ble();
     // Initialize the I2C instance
     twim_inst_init();
+    twim2_inst_init();
     // Initialize the FDC2214
     FDC2214_init();
     // Initialize the MAX77658

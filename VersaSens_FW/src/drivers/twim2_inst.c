@@ -37,7 +37,7 @@ Description : Original version.
 * defines.
 */
 
-#define _TWIM_INST_C_SRC
+#define _TWIM2_INST_C_SRC
 
 /****************************************************************************/
 /**                                                                        **/
@@ -46,7 +46,7 @@ Description : Original version.
 /****************************************************************************/
 
 #include <stdlib.h>
-#include "twim_inst.h"
+#include "twim2_inst.h"
 #include <nrfx_twim.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/printk.h>
@@ -60,7 +60,7 @@ Description : Original version.
 /**                                                                        **/
 /****************************************************************************/
 
-LOG_MODULE_REGISTER(twim_inst, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(twim2_inst, LOG_LEVEL_INF);
 
 /****************************************************************************/
 /**                                                                        **/
@@ -82,7 +82,7 @@ LOG_MODULE_REGISTER(twim_inst, LOG_LEVEL_INF);
  *                      This parameter can be used to pass additional information to the
  *                      handler function. In this application, it is not used.
  */
-static void twim_handler(nrfx_twim_evt_t const * p_event, void * p_context);
+static void twim2_handler(nrfx_twim_evt_t const * p_event, void * p_context);
 
 /****************************************************************************/
 /**                                                                        **/
@@ -91,7 +91,7 @@ static void twim_handler(nrfx_twim_evt_t const * p_event, void * p_context);
 /****************************************************************************/
 
 // Semaphore for I2C
-struct k_sem I2C_sem = Z_SEM_INITIALIZER(I2C_sem, 1, 1);
+struct k_sem I2C2_sem = Z_SEM_INITIALIZER(I2C2_sem, 1, 1);
 
 /****************************************************************************/
 /**                                                                        **/
@@ -100,10 +100,10 @@ struct k_sem I2C_sem = Z_SEM_INITIALIZER(I2C_sem, 1, 1);
 /****************************************************************************/
 
 /*! twim instance */
-static nrfx_twim_t twim_inst = NRFX_TWIM_INSTANCE(TWIM_INST_IDX);
+static nrfx_twim_t twim2_inst = NRFX_TWIM_INSTANCE(TWIM2_INST_IDX);
 
 // Flag to check if the last transfer was successful
-bool twim_last_transfer_succeeded = false;
+bool twim2_last_transfer_succeeded = false;
 
 /****************************************************************************/
 /**                                                                        **/
@@ -111,20 +111,20 @@ bool twim_last_transfer_succeeded = false;
 /**                                                                        **/
 /****************************************************************************/
 
-nrfx_twim_t * twim_get_instance(void)
+nrfx_twim_t * twim2_get_instance(void)
 {
     // Return a pointer to the twim instance
-    return (nrfx_twim_t *) &twim_inst;
+    return (nrfx_twim_t *) &twim2_inst;
 }
 
 /*****************************************************************************
 *****************************************************************************/
 
-int twim_inst_init(void)
+int twim2_inst_init(void)
 {
     // Configuration of the SDA pin
     nrf_gpio_cfg(
-        TWIM_SDA_PIN,
+        TWIM2_SDA_PIN,
         NRF_GPIO_PIN_DIR_INPUT,
         NRF_GPIO_PIN_INPUT_CONNECT,
         NRF_GPIO_PIN_NOPULL,
@@ -133,7 +133,7 @@ int twim_inst_init(void)
 
     // Configuration of the SCL pin
     nrf_gpio_cfg(
-        TWIM_SCL_PIN,
+        TWIM2_SCL_PIN,
         NRF_GPIO_PIN_DIR_INPUT,
         NRF_GPIO_PIN_INPUT_CONNECT,
         NRF_GPIO_PIN_NOPULL,
@@ -141,53 +141,53 @@ int twim_inst_init(void)
         NRF_GPIO_PIN_NOSENSE);
 
         
-    nrfx_twim_config_t twim_config = NRFX_TWIM_DEFAULT_CONFIG(TWIM_SCL_PIN, TWIM_SDA_PIN);
-    twim_config.frequency = NRF_TWIM_FREQ_400K;
+    nrfx_twim_config_t twim2_config = NRFX_TWIM_DEFAULT_CONFIG(TWIM2_SCL_PIN, TWIM2_SDA_PIN);
+    twim2_config.frequency = NRF_TWIM_FREQ_400K;
 
     // Initialize the TWIM instance
-    nrfx_err_t err_code = nrfx_twim_init(&twim_inst, &twim_config, twim_handler, NULL);
+    nrfx_err_t err_code = nrfx_twim_init(&twim2_inst, &twim2_config, twim2_handler, NULL);
     if (err_code != NRFX_SUCCESS)
     {
-        LOG_ERR("twim_init failed with error code: %d\n", err_code);
+        LOG_ERR("twim2_init failed with error code: %d\n", err_code);
         return -1;
-    } else {
-        LOG_INF("twim_init successful!\n");
+    }else {
+        LOG_INF("twim2_init successful!\n");
     }
 
     // Enable the interrupt for the TWIM instance
-    IRQ_DIRECT_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_TWIM_INST_GET(TWIM_INST_IDX)), IRQ_PRIO_LOWEST,
-                       NRFX_TWIM_INST_HANDLER_GET(TWIM_INST_IDX), 0);
+    IRQ_DIRECT_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_TWIM_INST_GET(TWIM2_INST_IDX)), IRQ_PRIO_LOWEST,
+                       NRFX_TWIM_INST_HANDLER_GET(TWIM2_INST_IDX), 0);
 
     // Enable the TWIM instance
-    nrfx_twim_enable(&twim_inst);
+    nrfx_twim_enable(&twim2_inst);
     return 0;
 }
 
 /*****************************************************************************
 *****************************************************************************/
 
-bool twim_is_busy(void)
+bool twim2_is_busy(void)
 {
     // Check if the TWIM instance is busy
-    return nrfx_twim_is_busy(&twim_inst);
+    return nrfx_twim_is_busy(&twim2_inst);
 }
 
 /*****************************************************************************
 *****************************************************************************/
 
-bool twim_transfer_succeeded(void)
+bool twim2_transfer_succeeded(void)
 {
     // Return the status of the last transfer
-    return twim_last_transfer_succeeded;
+    return twim2_last_transfer_succeeded;
 }
 
 /*****************************************************************************
 *****************************************************************************/
 
-void wait_for_twim_transfer(void)
+void wait_for_twim2_transfer(void)
 {
     // Wait for the TWIM transfer to finish
-    while (twim_is_busy())
+    while (twim2_is_busy())
     {
         k_sleep(K_MSEC(1));
     }
@@ -199,29 +199,29 @@ void wait_for_twim_transfer(void)
 /**                                                                        **/
 /****************************************************************************/
 
-static void twim_handler(nrfx_twim_evt_t const * p_event, void * p_context)
+static void twim2_handler(nrfx_twim_evt_t const * p_event, void * p_context)
 {
     // printk("TWIM event: %d\n", p_event->type);
     switch (p_event->type)
     {
         case NRFX_TWIM_EVT_DONE:
-            twim_last_transfer_succeeded = true;
+            twim2_last_transfer_succeeded = true;
             break;
         case NRFX_TWIM_EVT_ADDRESS_NACK:
             LOG_ERR("TWIM address NACK\n");
-            twim_last_transfer_succeeded = false;
+            twim2_last_transfer_succeeded = false;
             break;
         case NRFX_TWIM_EVT_DATA_NACK:
             LOG_ERR("TWIM data NACK\n");
-            twim_last_transfer_succeeded = false;
+            twim2_last_transfer_succeeded = false;
             break;
         case NRFX_TWIM_EVT_OVERRUN:
             LOG_ERR("TWIM overrun\n");
-            twim_last_transfer_succeeded = false;
+            twim2_last_transfer_succeeded = false;
             break;
         case NRFX_TWIM_EVT_BUS_ERROR:
             LOG_ERR("TWIM bus error\n");
-            twim_last_transfer_succeeded = false;
+            twim2_last_transfer_succeeded = false;
             break;
         default:
             break;
