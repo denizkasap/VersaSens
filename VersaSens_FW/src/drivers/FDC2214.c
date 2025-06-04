@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(FDC2214, LOG_LEVEL_INF);
 // FDC2214 storage format header
 #define FDC2214_STORAGE_HEADER 0x3333
 
-//#define FDC2214_PRINT_VAL
+#define FDC2214_PRINT_VAL
 
 /****************************************************************************/
 /**                                                                        **/
@@ -272,6 +272,9 @@ int FDC2214_init(void){
     nrf_gpio_cfg_output(46);
     nrf_gpio_pin_clear(46); //set reset pin to low
 
+    nrf_gpio_cfg_output(35);
+    nrf_gpio_pin_clear(35); //set reset pin to low
+
     // Get the I2C instances
     nrfx_twim_t *I2cInstPtr = twim_get_instance();
     I2cInstancePtr=I2cInstPtr;
@@ -291,7 +294,7 @@ int FDC2214_init(void){
                             .sensor_address = FDC_DEVICE_ADDR2,
                             .sensor_id = 1,
                             .i2c_bus_id = 0};
-
+    
     FDC_2214 csb_sensor_2 = {.channel_mask = 0xF, 
                             .sampling_rate = 0x4FFF, // 30 Hertz
                             .sensor_address = FDC_DEVICE_ADDR1,
@@ -341,7 +344,7 @@ int FDC2214_init(void){
         printk("FDC2214 #1 Initialization Failed\n");
         //return -1;
     }
-
+    
     // ----------------------------- INITIALIZE FDC CORE #2 ------------------------------
     res = FDC2214_read_16bit(REG_FDC_DEVICE_ID, &data_read, csb_sensor_2.sensor_address, csb_sensor_2.i2c_bus_id);
     if (res != 0){
@@ -548,8 +551,6 @@ uint32_t FDC2214_get_values(FDC_2214 *dev, uint8_t channel_id, uint8_t i2c_bus_i
     uint16_t conv_status = 0; //read_Cap(REG_FDC_STATUS, addr);
     int res = FDC2214_read_16bit(REG_FDC_STATUS, &conv_status, dev->sensor_address, i2c_bus_identifier);
     
-    struct time_values current_time = get_time_values();
-    int16_t time_started = current_time.time_ms_bin;
     while (!(conv_status & unread_conv)) {
         if (res != 0){
             printk("An error occured while reading reg %x\n", REG_FDC_DEVICE_ID);
@@ -558,8 +559,6 @@ uint32_t FDC2214_get_values(FDC_2214 *dev, uint8_t channel_id, uint8_t i2c_bus_i
         //printk("id: %i | CONV_STATUS: %x\n", channel_id, conv_status);
         FDC2214_read_16bit(REG_FDC_STATUS, &conv_status, dev->sensor_address, i2c_bus_identifier);
     }
-    current_time = get_time_values();
-    printk("Wait time for CH%i of core#%i: %i\n", channel_id, dev->sensor_id, current_time.time_ms_bin - time_started);
 
     uint16_t msb_value = 0;
     uint16_t lsb_value = 0;
@@ -595,20 +594,20 @@ void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
                             .sensor_address = FDC_DEVICE_ADDR2,
                             .sensor_id = 1,
                             .i2c_bus_id = 0};
-
+    
     FDC_2214 csb_sensor_2 = {.channel_mask = 0xF, 
                             .sampling_rate = 0x4FFF, // 30 Hertz
                             .sensor_address = FDC_DEVICE_ADDR1,
                             .sensor_id = 2,
                             .i2c_bus_id = 1};
-
+    
     FDC_2214 csb_sensor_3 = {.channel_mask = 0xF, 
                             .sampling_rate = 0x4FFF, // 30 Hertz
                             .sensor_address = FDC_DEVICE_ADDR2,
                             .sensor_id = 3,
                             .i2c_bus_id = 1};
-
-    const int SENSOR_COUNT = 4;                        
+    
+    const int SENSOR_COUNT = 4;
     const int CHAN_COUNT = 4;
     uint32_t FDC_values[SENSOR_COUNT * CHAN_COUNT];
     memset(FDC_values, 0, SENSOR_COUNT * CHAN_COUNT);
@@ -616,14 +615,15 @@ void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
     FDC2214_Storage.header = FDC2214_STORAGE_HEADER;       /*!< Storage header marker */
     uint8_t frame_index = 0;                            /*!< Frame sequence index */
 
-    FDC_2214 sensor_array[4] = {csb_sensor_0, csb_sensor_1, csb_sensor_2, csb_sensor_3}; 
+    FDC_2214 sensor_array[4] = {csb_sensor_0, csb_sensor_1, csb_sensor_2, csb_sensor_3};
+    int init_success_array[4] = {sensor0_init_successful, sensor1_init_successful, sensor2_init_successful, sensor3_init_successful};
 
     while (1){
         for (int i = 0; i < SENSOR_COUNT; ++i){
             struct time_values current_time = get_time_values();
             int16_t time_started = current_time.time_ms_bin;
             for (int j = 0; j < CHAN_COUNT; ++j) {
-                if (sensor0_init_successful){
+                if (init_success_array[i]){
                     FDC_values[i*CHAN_COUNT + j] = FDC2214_get_values(&sensor_array[i], j, sensor_array[i].i2c_bus_id);
                 } else {
                     FDC_values[i*CHAN_COUNT + j] = 0;
@@ -637,23 +637,6 @@ void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
                     printk("\n");
                 }
                 #endif
-            }
-            current_time = get_time_values();
-            switch (i) {
-                case 0:
-                    FDC2214_Storage.CORE0_time_ms = current_time.time_ms_bin - time_started;
-                    break;
-                case 1:
-                    FDC2214_Storage.CORE1_time_ms = current_time.time_ms_bin - time_started;
-                    break;
-                case 2:
-                    FDC2214_Storage.CORE2_time_ms = current_time.time_ms_bin - time_started;
-                    break;
-                case 3:
-                    FDC2214_Storage.CORE3_time_ms = current_time.time_ms_bin - time_started;
-                    break;
-                default:
-                    break;
             }
         }
 

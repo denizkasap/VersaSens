@@ -60,7 +60,7 @@ Description : Original version.
 #define TWIM2_SCL_PIN 29
 #define TWIM2_SDA_PIN 30
 
-#define TWIM2_INST_IDX 2
+#define TWIM2_INST_IDX 3
 
 /****************************************************************************/
 /**                                                                        **/

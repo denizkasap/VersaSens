@@ -91,10 +91,6 @@ typedef struct {
     uint32_t CH13_val;
     uint32_t CH14_val;
     uint32_t CH15_val;
-    int16_t CORE0_time_ms;
-    int16_t CORE1_time_ms;
-    int16_t CORE2_time_ms;
-    int16_t CORE3_time_ms;
 } __attribute__((packed)) FDC2214_StorageFormat;
 
 
