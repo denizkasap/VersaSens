@@ -175,6 +175,10 @@ int FDC2214_init(void);
 
 int FDC2214_configure(FDC_2214 *dev, uint8_t i2c_bus_identifier);
 
+int FDC2214_wakeup_mux(FDC_2214 *dev);
+
+int FDC2214_sleep_mux(FDC_2214 *dev);
+
 uint32_t FDC2214_get_values(FDC_2214 *dev, uint8_t channel_id, uint8_t i2c_bus_identifier);
 
 

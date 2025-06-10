@@ -284,25 +284,25 @@ int FDC2214_init(void){
 
     // Instantiate the sensor
     FDC_2214 csb_sensor_0 = {.channel_mask = 0xF, 
-                            .sampling_rate = 0x4FFF, // 30 Hertz
+                            .sampling_rate = 0x0F98,//0x4FFF, // 30 Hertz
                             .sensor_address = FDC_DEVICE_ADDR1,
                             .sensor_id = 0,
                             .i2c_bus_id = 0};
 
     FDC_2214 csb_sensor_1 = {.channel_mask = 0xF, 
-                            .sampling_rate = 0x4FFF, // 30 Hertz
+                            .sampling_rate = 0x0F98,//0x4FFF, // 30 Hertz
                             .sensor_address = FDC_DEVICE_ADDR2,
                             .sensor_id = 1,
                             .i2c_bus_id = 0};
     
     FDC_2214 csb_sensor_2 = {.channel_mask = 0xF, 
-                            .sampling_rate = 0x4FFF, // 30 Hertz
+                            .sampling_rate = 0x0F98,//0x4FFF, // 30 Hertz
                             .sensor_address = FDC_DEVICE_ADDR1,
                             .sensor_id = 2,
                             .i2c_bus_id = 1};
 
     FDC_2214 csb_sensor_3 = {.channel_mask = 0xF, 
-                            .sampling_rate = 0x4FFF, // 30 Hertz
+                            .sampling_rate = 0x0F98,//0x4FFF, // 30 Hertz
                             .sensor_address = FDC_DEVICE_ADDR2,
                             .sensor_id = 3,
                             .i2c_bus_id = 1};
@@ -316,64 +316,64 @@ int FDC2214_init(void){
     // ----------------------------- INITIALIZE FDC CORE #0 ------------------------------
     int res = FDC2214_read_16bit(REG_FDC_DEVICE_ID, &data_read, csb_sensor_0.sensor_address, csb_sensor_0.i2c_bus_id);
     if (res != 0){
-        printk("Error reading FDC Sensor 0\n");
+        LOG_ERR("Error reading FDC Sensor 0\n");
     }
 
     if (data_read == FDC_DEVICE_ID){
-        printk("FDC2214 #0 Initialized Successfully!\n");
+        LOG_INF("FDC2214 #0 Initialized Successfully!\n");
         sensor0_init_successful = 1;
         // Configure the sensor
         FDC2214_configure(&csb_sensor_0, csb_sensor_0.i2c_bus_id);
     } else {
-        printk("FDC2214 #0 Initialization Failed\n");
+        LOG_ERR("FDC2214 #0 Initialization Failed\n");
         //return -1;
     }
 
     // ----------------------------- INITIALIZE FDC CORE #1 ------------------------------
     res = FDC2214_read_16bit(REG_FDC_DEVICE_ID, &data_read, csb_sensor_1.sensor_address, csb_sensor_1.i2c_bus_id);
     if (res != 0){
-        printk("Error reading FDC Sensor 1\n");
+        LOG_ERR("Error reading FDC Sensor 1\n");
     }
 
     if (data_read == FDC_DEVICE_ID){
-        printk("FDC2214 #1 Initialized Successfully!\n");
+        LOG_INF("FDC2214 #1 Initialized Successfully!\n");
         sensor1_init_successful = 1;
         // Configure the sensor
         FDC2214_configure(&csb_sensor_1, csb_sensor_1.i2c_bus_id);
     } else {
-        printk("FDC2214 #1 Initialization Failed\n");
+        LOG_ERR("FDC2214 #1 Initialization Failed\n");
         //return -1;
     }
     
     // ----------------------------- INITIALIZE FDC CORE #2 ------------------------------
     res = FDC2214_read_16bit(REG_FDC_DEVICE_ID, &data_read, csb_sensor_2.sensor_address, csb_sensor_2.i2c_bus_id);
     if (res != 0){
-        printk("Error reading FDC Sensor 2\n");
+        LOG_ERR("Error reading FDC Sensor 2\n");
     }
 
     if (data_read == FDC_DEVICE_ID){
-        printk("FDC2214 #2 Initialized Successfully!\n");
+        LOG_INF("FDC2214 #2 Initialized Successfully!\n");
         sensor2_init_successful = 1;
         // Configure the sensor
         FDC2214_configure(&csb_sensor_2, csb_sensor_2.i2c_bus_id);
     } else {
-        printk("FDC2214 #2 Initialization Failed\n");
+        LOG_ERR("FDC2214 #2 Initialization Failed\n");
         //return -1;
     }
 
     // ----------------------------- INITIALIZE FDC CORE #3 ------------------------------
     res = FDC2214_read_16bit(REG_FDC_DEVICE_ID, &data_read, csb_sensor_3.sensor_address, csb_sensor_3.i2c_bus_id);
     if (res != 0){
-        printk("Error reading FDC Sensor 3\n");
+        LOG_ERR("Error reading FDC Sensor 3\n");
     }
 
     if (data_read == FDC_DEVICE_ID){
-        printk("FDC2214 #3 Initialized Successfully!\n");
+        LOG_INF("FDC2214 #3 Initialized Successfully!\n");
         sensor3_init_successful = 1;
         // Configure the sensor
         FDC2214_configure(&csb_sensor_3, csb_sensor_3.i2c_bus_id);
     } else {
-        printk("FDC2214 #3 Initialization Failed\n");
+        LOG_ERR("FDC2214 #3 Initialization Failed\n");
         //return -1;
     }
     
@@ -407,14 +407,14 @@ int FDC2214_configure(FDC_2214 *dev, uint8_t i2c_bus_identifier)
         status |= FDC2214_write_16bit(REG_FDC_OFFSET_CH0, data2write, dev->sensor_address, i2c_bus_identifier);
         data2write = 0x2001;
         status |= FDC2214_write_16bit(REG_FDC_CLOCK_DIVIDERS_CH0, data2write, dev->sensor_address, i2c_bus_identifier);
-        data2write = 0xF800;
+        data2write = 0x8800;
         status |= FDC2214_write_16bit(REG_FDC_DRIVE_CH0, data2write, dev->sensor_address, i2c_bus_identifier);
     }
     if (status != 0){
-        printk("Error configuring CH%i\n", 0 + dev->sensor_id*4);
+        LOG_ERR("Error configuring CH%i\n", 0 + dev->sensor_id*4);
         config_successful |= -1;
     } else {
-        printk("Configured CH%i\n", 0 + dev->sensor_id*4);
+        LOG_INF("Configured CH%i\n", 0 + dev->sensor_id*4);
     }
 
     // Configure CH1
@@ -428,14 +428,14 @@ int FDC2214_configure(FDC_2214 *dev, uint8_t i2c_bus_identifier)
         status |= FDC2214_write_16bit(REG_FDC_OFFSET_CH1, data2write, dev->sensor_address, i2c_bus_identifier);
         data2write = 0x2001;
         status |= FDC2214_write_16bit(REG_FDC_CLOCK_DIVIDERS_CH1, data2write, dev->sensor_address, i2c_bus_identifier);
-        data2write = 0xF800;
+        data2write = 0x8800;
         status |= FDC2214_write_16bit(REG_FDC_DRIVE_CH1, data2write, dev->sensor_address, i2c_bus_identifier);
     }
     if (status != 0){
-        printk("Error configuring CH%i\n", 1 + dev->sensor_id*4);
+        LOG_ERR("Error configuring CH%i\n", 1 + dev->sensor_id*4);
         config_successful |= -1;
     } else {
-        printk("Configured CH%i\n", 1 + dev->sensor_id*4);
+        LOG_INF("Configured CH%i\n", 1 + dev->sensor_id*4);
     }
 
     // Configure CH2
@@ -449,14 +449,14 @@ int FDC2214_configure(FDC_2214 *dev, uint8_t i2c_bus_identifier)
         status |= FDC2214_write_16bit(REG_FDC_OFFSET_CH2, data2write, dev->sensor_address, i2c_bus_identifier);
         data2write = 0x2001;
         status |= FDC2214_write_16bit(REG_FDC_CLOCK_DIVIDERS_CH2, data2write, dev->sensor_address, i2c_bus_identifier);
-        data2write = 0xF800;
+        data2write = 0x8800;
         status |= FDC2214_write_16bit(REG_FDC_DRIVE_CH2, data2write, dev->sensor_address, i2c_bus_identifier);
     }
     if (status != 0){
-        printk("Error configuring CH%i\n", 2 + dev->sensor_id*4);
+        LOG_ERR("Error configuring CH%i\n", 2 + dev->sensor_id*4);
         config_successful |= -1;
     } else {
-        printk("Configured CH%i\n", 2 + dev->sensor_id*4);
+        LOG_INF("Configured CH%i\n", 2 + dev->sensor_id*4);
     }
 
     // Configure CH3
@@ -470,14 +470,14 @@ int FDC2214_configure(FDC_2214 *dev, uint8_t i2c_bus_identifier)
         status |= FDC2214_write_16bit(REG_FDC_OFFSET_CH3, data2write, dev->sensor_address, i2c_bus_identifier);
         data2write = 0x2001;
         status |= FDC2214_write_16bit(REG_FDC_CLOCK_DIVIDERS_CH3, data2write, dev->sensor_address, i2c_bus_identifier);
-        data2write = 0xF800;
+        data2write = 0x8800;
         status |= FDC2214_write_16bit(REG_FDC_DRIVE_CH3, data2write, dev->sensor_address, i2c_bus_identifier);
     }
     if (status != 0){
-        printk("Error configuring CH%i\n", 3 + dev->sensor_id*4);
+        LOG_ERR("Error configuring CH%i\n", 3 + dev->sensor_id*4);
         config_successful |= -1;
     } else {
-        printk("Configured CH%i\n", 3 + dev->sensor_id*4);
+        LOG_INF("Configured CH%i\n", 3 + dev->sensor_id*4);
     }
 
     // Configure ?????
@@ -487,26 +487,58 @@ int FDC2214_configure(FDC_2214 *dev, uint8_t i2c_bus_identifier)
     uint16_t mux = 0x0208 | ((uint16_t)rr_se << 13) | glitch_filter;
     status |= FDC2214_write_16bit(REG_FDC_MUX_CONFIG, mux, dev->sensor_address, i2c_bus_identifier);
     if (status != 0){
-        printk("Error configuring MUX!\n");
+        LOG_ERR("Error configuring MUX!\n");
         config_successful |= -1;
     }
 
     // Use External Oscillator for Reference
-    data2write = 0x1E81;
+    data2write = 0x38E1;//0x1E81;
     status |= FDC2214_write_16bit(REG_FDC_CONFIG, data2write, dev->sensor_address, i2c_bus_identifier); 
     if (status != 0){
-        printk("Error configuring CONFIG!\n");
+        LOG_ERR("Error configuring CONFIG!\n");
         config_successful |= -1;
     }
 
     if (config_successful != 0){
-        printk("FDC2214 Configuration Failed!\n");
+        LOG_ERR("FDC2214 Configuration Failed!\n");
         return -1;
     } else {
-        printk("FDC2214 Configured Succesfully!\n");
+        LOG_INF("FDC2214 Configured Succesfully!\n");
         return 0;
     }
     
+}
+
+/*****************************************************************************
+*****************************************************************************/
+
+int FDC2214_wakeup_mux(FDC_2214 *dev){
+    /*
+    This function wakes a certain core from sleep.
+    */
+    uint16_t data2write = 0x1E81;
+    int status = FDC2214_write_16bit(REG_FDC_CONFIG, data2write, dev->sensor_address, dev->i2c_bus_id); 
+    if (status != 0){
+        LOG_ERR("Error waking up CORE %i!\n", dev->sensor_id);
+        return -1;
+    }
+    return 0;
+}
+
+/*****************************************************************************
+*****************************************************************************/
+
+int FDC2214_sleep_mux(FDC_2214 *dev){
+    /*
+    This function wakes a certain core from sleep.
+    */
+    uint16_t data2write = 0x3E81;
+    int status = FDC2214_write_16bit(REG_FDC_CONFIG, data2write, dev->sensor_address, dev->i2c_bus_id); 
+    if (status != 0){
+        LOG_ERR("Error sleeping CORE %i!\n", dev->sensor_id);
+        return -1;
+    }
+    return 0;
 }
 
 /*****************************************************************************
@@ -553,7 +585,7 @@ uint32_t FDC2214_get_values(FDC_2214 *dev, uint8_t channel_id, uint8_t i2c_bus_i
     
     while (!(conv_status & unread_conv)) {
         if (res != 0){
-            printk("An error occured while reading reg %x\n", REG_FDC_DEVICE_ID);
+            LOG_ERR("An error occured while reading reg %x\n", REG_FDC_DEVICE_ID);
             return -1;
         }
         //printk("id: %i | CONV_STATUS: %x\n", channel_id, conv_status);
@@ -569,7 +601,7 @@ uint32_t FDC2214_get_values(FDC_2214 *dev, uint8_t channel_id, uint8_t i2c_bus_i
     cap_value |= lsb_value;
 
     if (res != 0){
-        printk("An error occured while reading reg %x\n", REG_FDC_DEVICE_ID);
+        LOG_ERR("An error occured while reading reg %x\n", REG_FDC_DEVICE_ID);
         return -1;
     }
 
@@ -584,25 +616,25 @@ void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
     // Instantiate again the sensor
     // This is a workaround temporarily for the fact that I cannot pass pointer of pointer as an argument to the thread
     FDC_2214 csb_sensor_0 = {.channel_mask = 0xF, 
-                            .sampling_rate = 0x4FFF, // 30 Hertz
+                            .sampling_rate = 0x0F98,//0x4FFF, // 30 Hertz
                             .sensor_address = FDC_DEVICE_ADDR1,
                             .sensor_id = 0,
                             .i2c_bus_id = 0};
 
     FDC_2214 csb_sensor_1 = {.channel_mask = 0xF, 
-                            .sampling_rate = 0x4FFF, // 30 Hertz
+                            .sampling_rate = 0x0F98,//0x4FFF, // 30 Hertz
                             .sensor_address = FDC_DEVICE_ADDR2,
                             .sensor_id = 1,
                             .i2c_bus_id = 0};
     
     FDC_2214 csb_sensor_2 = {.channel_mask = 0xF, 
-                            .sampling_rate = 0x4FFF, // 30 Hertz
+                            .sampling_rate = 0x0F98,//0x4FFF, // 30 Hertz
                             .sensor_address = FDC_DEVICE_ADDR1,
                             .sensor_id = 2,
                             .i2c_bus_id = 1};
     
     FDC_2214 csb_sensor_3 = {.channel_mask = 0xF, 
-                            .sampling_rate = 0x4FFF, // 30 Hertz
+                            .sampling_rate = 0x0F98,//0x4FFF, // 30 Hertz
                             .sensor_address = FDC_DEVICE_ADDR2,
                             .sensor_id = 3,
                             .i2c_bus_id = 1};
@@ -618,26 +650,39 @@ void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
     FDC_2214 sensor_array[4] = {csb_sensor_0, csb_sensor_1, csb_sensor_2, csb_sensor_3};
     int init_success_array[4] = {sensor0_init_successful, sensor1_init_successful, sensor2_init_successful, sensor3_init_successful};
 
+    int wakeup_status = 0;
+
     while (1){
         for (int i = 0; i < SENSOR_COUNT; ++i){
-            struct time_values current_time = get_time_values();
-            int16_t time_started = current_time.time_ms_bin;
-            for (int j = 0; j < CHAN_COUNT; ++j) {
-                if (init_success_array[i]){
-                    FDC_values[i*CHAN_COUNT + j] = FDC2214_get_values(&sensor_array[i], j, sensor_array[i].i2c_bus_id);
-                } else {
-                    FDC_values[i*CHAN_COUNT + j] = 0;
-                }
+            //Wake-up the CORE i
+            wakeup_status = FDC2214_wakeup_mux(&sensor_array[i]);
+            k_msleep(5); //required for some reason, idk why?
+            if (wakeup_status == 0){
+                for (int j = 0; j < CHAN_COUNT; ++j) {
+                    if (init_success_array[i]){
+                        FDC_values[i*CHAN_COUNT + j] = FDC2214_get_values(&sensor_array[i], j, sensor_array[i].i2c_bus_id);
+                    } else {
+                        FDC_values[i*CHAN_COUNT + j] = 3;
+                    }
 
-                #ifdef FDC2214_PRINT_VAL
-                printk("%lu",FDC_values[i*CHAN_COUNT + j]);
-                if (i*CHAN_COUNT + j < SENSOR_COUNT * CHAN_COUNT - 1){
-                    printk(",");
-                } else {
-                    printk("\n");
+                    /*
+                    #ifdef FDC2214_PRINT_VAL
+                    printk("%lu",FDC_values[i*CHAN_COUNT + j]);
+                    if (i*CHAN_COUNT + j < SENSOR_COUNT * CHAN_COUNT - 1){
+                        printk(",");
+                    } else {
+                        printk("\n");
+                    }
+                    #endif
+                    */
                 }
-                #endif
+            } else {
+                for (int j = 0; j < CHAN_COUNT; ++j) {
+                    FDC_values[i*CHAN_COUNT + j] = 2;
+                }
             }
+            //Sleep the CORE i
+            FDC2214_sleep_mux(&sensor_array[i]);
         }
 
         struct time_values current_time = get_time_values();
@@ -663,8 +708,9 @@ void FDC2214_thread_func(void *arg1, void *arg2, void *arg3)
         FDC2214_Storage.CH13_val = FDC_values[13];
         FDC2214_Storage.CH14_val = FDC_values[14];
         FDC2214_Storage.CH15_val = FDC_values[15];
+        LOG_INF("%i,%i,%i,%i | %i,%i,%i,%i | %i,%i,%i,%i | %i,%i,%i,%i\n", FDC_values[0], FDC_values[1], FDC_values[2], FDC_values[3], FDC_values[4], FDC_values[5], FDC_values[6], FDC_values[7], FDC_values[8], FDC_values[9], FDC_values[10], FDC_values[11], FDC_values[12], FDC_values[13], FDC_values[14], FDC_values[15]);
 
-        storage_add_to_fifo((uint8_t *)&FDC2214_Storage, sizeof(FDC2214_Storage));
+        //storage_add_to_fifo((uint8_t *)&FDC2214_Storage, sizeof(FDC2214_Storage));
         ble_add_to_fifo((uint8_t *)&FDC2214_Storage, sizeof(FDC2214_Storage));
         printk("data sent\n");
         //k_sleep(K_MSEC(200));
